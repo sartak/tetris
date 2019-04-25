@@ -1,6 +1,6 @@
 # Play Live
 
-[https://ld44.sartak.org/](https://ld44.sartak.org/)
+[https://tetris.sartak.org/](https://tetris.sartak.org/)
 
 # Development
 
