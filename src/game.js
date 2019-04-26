@@ -199,10 +199,10 @@ function fallControlledPiece() {
       });
 
       state.controlledPiece = null;
-    } else {
-      controlledPiece.origin.y--;
+      return false;
     }
 
+    controlledPiece.origin.y--;
     return true;
   }
 
