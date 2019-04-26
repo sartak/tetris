@@ -186,6 +186,10 @@ function create() {
 
   state.background = physics.add.image(config.width / 2, config.height / 2, 'board');
   state.origin = { x: config.width / 2 - state.background.width / 2, y: config.height / 2 + state.background.height / 2 };
+
+  state.scoreLabel = this.add.text(config.width - state.background.width / 4, config.height / 2, '', { fontSize: '16px', fill: '#FFF' });
+  updateScore();
+  state.scoreLabel.x -= state.scoreLabel.width * 0.66;
 }
 
 function fallControlledPiece() {
@@ -217,6 +221,12 @@ function fallControlledPiece() {
   return false;
 }
 
+function updateScore() {
+  const { lines, scoreLabel } = state;
+
+  scoreLabel.setText(`Lines: ${lines}`);
+}
+
 function clearLines() {
   const { board } = state;
 
@@ -241,6 +251,7 @@ function clearLines() {
       state.debug.lines = state.lines;
       state.debug.speed = state.speed;
     }
+    updateScore();
 
     line.forEach((block, x) => {
       line[x] = null;
@@ -395,6 +406,10 @@ function handleRotate(dr) {
     let canRotate = true;
 
     controlledPiecePositions(dr).forEach(({ x, y }) => {
+      if (x < 0 || x >= config.gameWidth) {
+        canRotate = false;
+      }
+
       if (board[y][x]) {
         canRotate = false;
       }
