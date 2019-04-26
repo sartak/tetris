@@ -8,6 +8,8 @@ import block2Sprite from './assets/block-2.png';
 import block3Sprite from './assets/block-3.png';
 import block4Sprite from './assets/block-4.png';
 import block5Sprite from './assets/block-5.png';
+import block6Sprite from './assets/block-6.png';
+import block7Sprite from './assets/block-7.png';
 
 const DEBUG = (!process.env.NODE_ENV || process.env.NODE_ENV === 'development');
 
@@ -36,32 +38,7 @@ const config = {
   boxSize: 30,
 };
 
-const state : any = {
-  game: null,
-  physics: null,
-  cursors: null,
-  keys: {},
-  debug: null,
-  time: 0,
-  prevTime: 0,
-  speed: 800,
-  board: _.range(config.gameHeight).map(() => _.range(config.gameWidth).map(() => null)),
-  active: true,
-  lines: 0,
-};
-
 const pieces = [
-  // #
-  // #
-  // #
-  // #
-  [
-    [[0, 1], [1, 1], [2, 1], [3, 1]],
-    [[3, 0], [3, 1], [3, 2], [3, 3]],
-    [[0, 2], [1, 2], [2, 2], [3, 2]],
-    [[2, 0], [2, 1], [2, 2], [2, 3]],
-  ],
-
   // ##
   // #
   // #
@@ -74,21 +51,23 @@ const pieces = [
 
   // #
   // #
+  // #
+  // #
+  [
+    [[0, 1], [1, 1], [2, 1], [3, 1]],
+    [[3, 0], [3, 1], [3, 2], [3, 3]],
+    [[0, 2], [1, 2], [2, 2], [3, 2]],
+    [[2, 0], [2, 1], [2, 2], [2, 3]],
+  ],
+
+  // #
+  // #
   // ##
   [
     [[0, 1], [1, 1], [2, 0], [2, 1]],
     [[1, 0], [1, 1], [1, 2], [2, 2]],
     [[0, 1], [0, 2], [1, 1], [2, 1]],
     [[0, 0], [1, 0], [1, 1], [1, 2]],
-  ],
-
-  // ##
-  // ##
-  [
-    [[1, 0], [2, 0], [1, 1], [2, 1]],
-    [[1, 0], [2, 0], [1, 1], [2, 1]],
-    [[1, 0], [2, 0], [1, 1], [2, 1]],
-    [[1, 0], [2, 0], [1, 1], [2, 1]],
   ],
 
   //  ##
@@ -98,6 +77,15 @@ const pieces = [
     [[1, 0], [1, 1], [2, 1], [2, 2]],
     [[0, 2], [1, 2], [1, 1], [2, 1]],
     [[0, 0], [0, 1], [1, 1], [1, 2]],
+  ],
+
+  // ##
+  // ##
+  [
+    [[1, 0], [2, 0], [1, 1], [2, 1]],
+    [[1, 0], [2, 0], [1, 1], [2, 1]],
+    [[1, 0], [2, 0], [1, 1], [2, 1]],
+    [[1, 0], [2, 0], [1, 1], [2, 1]],
   ],
 
   // ###
@@ -118,6 +106,24 @@ const pieces = [
     [[0, 1], [0, 2], [1, 1], [1, 0]],
   ],
 ];
+
+const state : any = {
+  game: null,
+  physics: null,
+  cursors: null,
+  keys: {},
+  debug: null,
+  time: 0,
+  prevTime: 0,
+  speed: 800,
+  board: _.range(config.gameHeight).map(() => _.range(config.gameWidth).map(() => null)),
+  active: true,
+  lines: 0,
+  nextPiece: {
+    rotation: _.random(0, 3),
+    color: _.random(1, 7),
+  },
+};
 
 function prop(name: string) {
   if (DEBUG && name in window.props) {
@@ -155,6 +161,8 @@ function preload() {
   game.load.image('block-3', block3Sprite);
   game.load.image('block-4', block4Sprite);
   game.load.image('block-5', block5Sprite);
+  game.load.image('block-6', block6Sprite);
+  game.load.image('block-7', block7Sprite);
 }
 
 function create() {
@@ -228,7 +236,7 @@ function clearLines() {
 
     clearedLine = true;
     state.lines++;
-    state.speed -= 20;
+    state.speed -= 10;
     if (state.debug) {
       state.debug.lines = state.lines;
       state.debug.speed = state.speed;
@@ -277,16 +285,12 @@ function fallUncontrolled() {
   return fellLine;
 }
 
-function rotate(piece) {
-  return [...piece];
-}
-
 function controlledPiecePositions(dr = 0) {
   const { controlledPiece } = state;
   const positions = [];
 
   if (controlledPiece) {
-    controlledPiece.piece[(controlledPiece.rotation + dr) % 4].forEach(([ox, oy]) => {
+    pieces[controlledPiece.color-1][(controlledPiece.rotation + dr) % 4].forEach(([ox, oy]) => {
       const x = controlledPiece.origin.x + ox;
       const y = controlledPiece.origin.y - oy;
       positions.push({ x, y });
@@ -298,13 +302,15 @@ function controlledPiecePositions(dr = 0) {
 
 function addNewPiece() {
   const { board } = state;
-  const piece = pieces[_.random(pieces.length-1)];
-  const rotation = _.random(0, 3);
-  const color = _.random(1, 5);
-
   const origin = { x: Math.floor(config.gameWidth / 2) - 1, y: config.gameHeight - 1 };
 
-  state.controlledPiece = { origin, piece, rotation, color };
+  state.controlledPiece = { origin, ...state.nextPiece };
+
+  state.nextPiece = {
+    rotation: _.random(0, 3),
+    color: _.random(1, 7),
+  };
+
   let hasCollision = false;
   controlledPiecePositions().forEach(({ x, y }) => {
     if (board[y][x]) {
@@ -346,6 +352,11 @@ function renderBoard() {
 
   controlledPiecePositions().forEach(({ x, y }) => {
     state.boxes.push(renderBox(x, y, state.controlledPiece.color));
+  });
+
+  const nextPiece = state.nextPiece;
+  pieces[nextPiece.color-1][nextPiece.rotation].forEach(([x, y]) => {
+    state.boxes.push(renderBox(x + 12, 16 - y, nextPiece.color));
   });
 
   return false;
